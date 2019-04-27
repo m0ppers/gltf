@@ -77,12 +77,12 @@ impl Default for ColorSpace {
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
 #[serde(default, rename_all = "camelCase")]
 pub struct PbrAttributes {
-    base_color_attrib_space: Checked<ColorSpace>,
-    base_color_attrib: Option<String>,
-    roughness_attrib: Option<String>,
-    metallic_attrib: Option<String>,
-    occlusion_attrib: Option<String>,
-    emissive_attrib: Option<String>,
+    pub base_color_attrib_space: Checked<ColorSpace>,
+    pub base_color_attrib: Option<String>,
+    pub roughness_attrib: Option<String>,
+    pub metallic_attrib: Option<String>,
+    pub occlusion_attrib: Option<String>,
+    pub emissive_attrib: Option<String>,
 }
 
 /// A set of parameter values that are used to define the specular-glossiness
