@@ -78,10 +78,15 @@ impl Default for ColorSpace {
 #[serde(default, rename_all = "camelCase")]
 pub struct PbrAttributes {
     pub base_color_attrib_space: Checked<ColorSpace>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub base_color_attrib: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub roughness_attrib: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub metallic_attrib: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub occlusion_attrib: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub emissive_attrib: Option<String>,
 }
 
