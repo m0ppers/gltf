@@ -1,24 +1,121 @@
-use gltf_derive::Validate;
-use serde_derive::{Serialize, Deserialize};
+use crate::texture;
+use crate::validation::Checked;
 #[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
-use crate::{Extras, texture, validation::Validate, material::StrengthFactor};
+use crate::{material::StrengthFactor, validation::Validate, Extras};
+use gltf_derive::Validate;
+use serde::de;
+use serde_derive::{Deserialize, Serialize};
+use std::fmt;
 
 /// The material appearance of a primitive.
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
 pub struct Material {
     #[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
-    #[serde(default, rename = "KHR_materials_pbrSpecularGlossiness", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        rename = "KHR_materials_pbrSpecularGlossiness",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub pbr_specular_glossiness: Option<PbrSpecularGlossiness>,
-
     #[cfg(feature = "KHR_materials_unlit")]
-    #[serde(default, rename = "KHR_materials_unlit", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        rename = "KHR_materials_unlit",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub unlit: Option<Unlit>,
+    #[serde(
+        default,
+        rename = "EXT_pbr_attributes",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub ext_pbr_attributes: Option<PbrAttributes>,
+    #[serde(default, rename = "AA_shadow", skip_serializing_if = "Option::is_none")]
+    pub aa_shadow: Option<AAShadow>,
 }
 
 /// A set of parameter values that are used to define the metallic-roughness
 /// material model from Physically-Based Rendering (PBR) methodology.
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
 pub struct PbrMetallicRoughness {}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ColorSpace {
+    SRGB,
+    Linear,
+}
+
+pub const VALID_COLOR_SPACES: &'static [&'static str] = &["sRGB", "linear"];
+
+impl serde::Serialize for ColorSpace {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            ColorSpace::SRGB => serializer.serialize_str("sRGB"),
+            ColorSpace::Linear => serializer.serialize_str("linear"),
+        }
+    }
+}
+
+impl<'de> de::Deserialize<'de> for Checked<ColorSpace> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct Visitor;
+        impl<'de> de::Visitor<'de> for Visitor {
+            type Value = Checked<ColorSpace>;
+
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "any of: {:?}", VALID_COLOR_SPACES)
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                use self::ColorSpace::*;
+                use crate::validation::Checked::*;
+                Ok(match value {
+                    "sRGB" => Valid(SRGB),
+                    "linear" => Valid(Linear),
+                    _ => Invalid,
+                })
+            }
+        }
+        deserializer.deserialize_str(Visitor)
+    }
+}
+
+impl Default for ColorSpace {
+    fn default() -> Self {
+        ColorSpace::Linear
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PbrAttributes {
+    pub base_color_attrib_space: Checked<ColorSpace>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub base_color_attrib: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub roughness_attrib: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metallic_attrib: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub occlusion_attrib: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub emissive_attrib: Option<String>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
+#[serde(default, rename_all = "camelCase")]
+pub struct AAShadow {
+    pub shadow_texture: Option<texture::Info>,
+}
 
 /// A set of parameter values that are used to define the specular-glossiness
 /// material model from Physically-Based Rendering (PBR) methodology.
