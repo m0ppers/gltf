@@ -97,9 +97,11 @@ impl<'a> Material<'a> {
     /// Physically-Based Rendering (PBR) methodology.
     #[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
     pub fn pbr_specular_glossiness(&self) -> Option<PbrSpecularGlossiness<'a>> {
-        self.json.extensions
+        self.json
+            .extensions
             .as_ref()?
-            .pbr_specular_glossiness.as_ref()
+            .pbr_specular_glossiness
+            .as_ref()
             .map(|x| PbrSpecularGlossiness::new(self.document, x))
     }
 
@@ -150,6 +152,18 @@ impl<'a> Material<'a> {
         })
     }
 
+    /// shadow texture
+    pub fn shadow_texture(&self) -> Option<texture::Info<'a>> {
+        self.json.extensions.as_ref().and_then(|extensions| {
+            extensions.aa_shadow.as_ref().and_then(|aa_shadow| {
+                aa_shadow.shadow_texture.as_ref().map(|json| {
+                    let texture = self.document.textures().nth(json.index.value()).unwrap();
+                    texture::Info::new(texture, json)
+                })
+            })
+        })
+    }
+
     /// The emissive color of the material.
     ///
     /// The default value is `[0.0, 0.0, 0.0]`.
@@ -158,14 +172,15 @@ impl<'a> Material<'a> {
     }
 
     /// Specifies whether the material is unlit.
-    /// 
-    /// Returns `true` if the [`KHR_materials_unlit`] property was specified, in which 
+    ///
+    /// Returns `true` if the [`KHR_materials_unlit`] property was specified, in which
     /// case the renderer should prefer to ignore all PBR values except `baseColor`.
-    /// 
+    ///
     /// [`KHR_materials_unlit`](https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_unlit#overview)
     #[cfg(feature = "KHR_materials_unlit")]
     pub fn unlit(&self) -> bool {
-        self.json.extensions
+        self.json
+            .extensions
             .as_ref()
             .map_or(false, |extensions| extensions.unlit.is_some())
     }
@@ -402,7 +417,6 @@ impl<'a> OcclusionTexture<'a> {
     pub fn texture(&self) -> texture::Texture<'a> {
         self.texture.clone()
     }
-    
     /// Optional application specific data.
     pub fn extras(&self) -> &'a json::Extras {
         &self.json.extras
