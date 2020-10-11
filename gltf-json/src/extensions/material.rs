@@ -109,6 +109,8 @@ pub struct PbrAttributes {
     pub occlusion_attrib: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub emissive_attrib: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub shadow_attrib: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
