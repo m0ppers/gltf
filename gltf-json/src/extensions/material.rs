@@ -1,11 +1,10 @@
-use crate::texture;
-use crate::validation::Checked;
-#[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
-use crate::{material::StrengthFactor, validation::Validate, Extras};
 use gltf_derive::Validate;
-use serde::de;
-use serde_derive::{Deserialize, Serialize};
-use std::fmt;
+use serde_derive::{Serialize, Deserialize};
+#[cfg(any(feature = "KHR_materials_pbrSpecularGlossiness", feature = "KHR_materials_transmission", feature = "KHR_materials_ior"))]
+use crate::{Extras, validation::Validate};
+use crate::texture;
+#[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
+use crate::material::StrengthFactor;
 
 /// The material appearance of a primitive.
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
@@ -24,14 +23,22 @@ pub struct Material {
         skip_serializing_if = "Option::is_none"
     )]
     pub unlit: Option<Unlit>,
-    #[serde(
-        default,
-        rename = "EXT_pbr_attributes",
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub ext_pbr_attributes: Option<PbrAttributes>,
+    // #[serde(
+    //     default,
+    //     rename = "EXT_pbr_attributes",
+    //     skip_serializing_if = "Option::is_none"
+    // )]
+    // pub ext_pbr_attributes: Option<PbrAttributes>,
     #[serde(default, rename = "AA_shadow", skip_serializing_if = "Option::is_none")]
     pub aa_shadow: Option<AAShadow>,
+
+    #[cfg(feature = "KHR_materials_transmission")]
+    #[serde(default, rename = "KHR_materials_transmission", skip_serializing_if = "Option::is_none")]
+    pub transmission: Option<Transmission>,
+
+    #[cfg(feature = "KHR_materials_ior")]
+    #[serde(default, rename = "KHR_materials_ior", skip_serializing_if = "Option::is_none")]
+    pub ior: Option<Ior>,
 }
 
 /// A set of parameter values that are used to define the metallic-roughness
@@ -39,79 +46,79 @@ pub struct Material {
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
 pub struct PbrMetallicRoughness {}
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum ColorSpace {
-    SRGB,
-    Linear,
-}
+// #[derive(Clone, Debug, Eq, PartialEq)]
+// pub enum ColorSpace {
+//     SRGB,
+//     Linear,
+// }
 
-pub const VALID_COLOR_SPACES: &'static [&'static str] = &["sRGB", "linear"];
+// pub const VALID_COLOR_SPACES: &'static [&'static str] = &["sRGB", "linear"];
 
-impl serde::Serialize for ColorSpace {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        match *self {
-            ColorSpace::SRGB => serializer.serialize_str("sRGB"),
-            ColorSpace::Linear => serializer.serialize_str("linear"),
-        }
-    }
-}
+// impl serde::Serialize for ColorSpace {
+//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+//     where
+//         S: serde::Serializer,
+//     {
+//         match *self {
+//             ColorSpace::SRGB => serializer.serialize_str("sRGB"),
+//             ColorSpace::Linear => serializer.serialize_str("linear"),
+//         }
+//     }
+// }
 
-impl<'de> de::Deserialize<'de> for Checked<ColorSpace> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        struct Visitor;
-        impl<'de> de::Visitor<'de> for Visitor {
-            type Value = Checked<ColorSpace>;
+// impl<'de> Deserialize<'de> for Checked<ColorSpace> {
+//     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+//     where
+//         D: serde::Deserializer<'de>,
+//     {
+//         struct Visitor;
+//         impl<'de> de::Visitor<'de> for Visitor {
+//             type Value = Checked<ColorSpace>;
 
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                write!(f, "any of: {:?}", VALID_COLOR_SPACES)
-            }
+//             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//                 write!(f, "any of: {:?}", VALID_COLOR_SPACES)
+//             }
 
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                use self::ColorSpace::*;
-                use crate::validation::Checked::*;
-                Ok(match value {
-                    "sRGB" => Valid(SRGB),
-                    "linear" => Valid(Linear),
-                    _ => Invalid,
-                })
-            }
-        }
-        deserializer.deserialize_str(Visitor)
-    }
-}
+//             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+//             where
+//                 E: de::Error,
+//             {
+//                 use self::ColorSpace::*;
+//                 use crate::validation::Checked::*;
+//                 Ok(match value {
+//                     "sRGB" => Valid(SRGB),
+//                     "linear" => Valid(Linear),
+//                     _ => Invalid,
+//                 })
+//             }
+//         }
+//         deserializer.deserialize_str(Visitor)
+//     }
+// }
 
-impl Default for ColorSpace {
-    fn default() -> Self {
-        ColorSpace::Linear
-    }
-}
+// impl Default for ColorSpace {
+//     fn default() -> Self {
+//         ColorSpace::Linear
+//     }
+// }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
-#[serde(default, rename_all = "camelCase")]
-pub struct PbrAttributes {
-    pub base_color_attrib_space: Checked<ColorSpace>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub base_color_attrib: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub roughness_attrib: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub metallic_attrib: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub occlusion_attrib: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub emissive_attrib: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub shadow_attrib: Option<String>,
-}
+// #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
+// #[serde(default, rename_all = "camelCase")]
+// pub struct PbrAttributes {
+//     pub base_color_attrib_space: Checked<ColorSpace>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub base_color_attrib: Option<String>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub roughness_attrib: Option<String>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub metallic_attrib: Option<String>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub occlusion_attrib: Option<String>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub emissive_attrib: Option<String>,
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub shadow_attrib: Option<String>,
+// }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
 #[serde(default, rename_all = "camelCase")]
@@ -212,3 +219,75 @@ impl Validate for PbrSpecularFactor {}
 #[cfg(feature = "KHR_materials_unlit")]
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
 pub struct Unlit {}
+
+/// A number in the inclusive range [0.0, 1.0] with a default value of 0.0.
+#[cfg(feature = "KHR_materials_transmission")]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct TransmissionFactor(pub f32);
+
+#[cfg(feature = "KHR_materials_transmission")]
+impl Default for TransmissionFactor {
+    fn default() -> Self {
+        TransmissionFactor(0.0)
+    }
+}
+
+#[cfg(feature = "KHR_materials_transmission")]
+impl Validate for TransmissionFactor {}
+
+#[cfg(feature = "KHR_materials_transmission")]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Transmission {
+    /// The base percentage of light that is transmitted through the surface.
+    ///
+    /// The amount of light that is transmitted by the surface rather than diffusely re-emitted. 
+    /// This is a percentage of all the light that penetrates a surface (i.e. isn’t specularly reflected) 
+    /// rather than a percentage of the total light that hits a surface. 
+    /// A value of 1.0 means that 100% of the light that penetrates the surface is transmitted through.
+    pub transmission_factor: TransmissionFactor,
+
+    /// The transmission texture.
+    ///
+    /// The R channel of this texture defines the amount of light that is transmitted by the surface 
+    /// rather than diffusely re-emitted. A value of 1.0 in the red channel means that 100% of the light
+    /// that penetrates the surface (i.e. isn’t specularly reflected) is transmitted through. 
+    /// The value is linear and is multiplied by the transmissionFactor to determine the total transmission value.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub transmission_texture: Option<texture::Info>,
+
+    /// Optional application specific data.
+    #[cfg_attr(feature = "extras", serde(skip_serializing_if = "Option::is_none"))]
+    pub extras: Extras,
+}
+
+/// A positive number with default value of 1.5
+#[cfg(feature = "KHR_materials_ior")]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct IndexOfRefraction(pub f32);
+
+#[cfg(feature = "KHR_materials_ior")]
+impl Default for IndexOfRefraction {
+    fn default() -> Self {
+        IndexOfRefraction(1.5)
+    }
+}
+
+#[cfg(feature = "KHR_materials_ior")]
+impl Validate for IndexOfRefraction {}
+
+#[cfg(feature = "KHR_materials_ior")]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
+#[serde(default, rename_all = "camelCase")]
+pub struct Ior {
+    /// The index of refraction.
+    ///
+    /// Typical values for the index of refraction range from 1 to 2. 
+    /// In rare cases values greater than 2 are possible.
+    /// For example, the ior of water is 1.33, and diamond is 2.42
+    pub ior: IndexOfRefraction,
+
+    /// Optional application specific data.
+    #[cfg_attr(feature = "extras", serde(skip_serializing_if = "Option::is_none"))]
+    pub extras: Extras,
+}

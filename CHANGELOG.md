@@ -6,6 +6,70 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
 The `gltf` crate adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## [0.16.0] - 2021-05-13
+
+### Added
+
+- Support for the `KHR_texture_transform` extension.
+- Support for the `KHR_materials_transmission_ior extension`.
+
+### Changed
+
+- `Material::alpha_cutoff` is now optional.
+
+### Fixed
+
+- URIs with embedded data failing to import when using `import_slice`.
+- Serialization of empty primitives object being skipped.
+
+## [0.15.2] - 2020-03-29
+
+### Changed
+
+- All features are now exposed in the [online documentation](http://docs.rs/gltf).
+- Primary iterators now implement `Iterator::nth` explicitly for improved performance.
+
+### Fixed
+
+- Compiler warnings regarding deprecation of `std::error::Error::description`.
+
+## [0.15.1] - 2020-03-15
+
+### Added
+
+- New feature `guess_mime_type` which, as the name suggests, attempts to guess
+  the MIME type of an image if it doesn't exactly match the standard.
+
+### Changed
+
+- `base64` updated to `0.11`.
+- `byteorder` updated to `1.3`.
+- `image` updated to `0.23.0`.
+- `Format` has additional variants for 16-bit pixel formats.
+
+### Fixed
+
+- Off-by-one error when reading whole files incurring a gratuitous reallocation.
+
+## [0.15.0] - 2020-01-18
+
+### Added
+
+- Support for the `KHR_materials_unlit` extension, which adds an `unlit` field
+  to `Material`.
+- `ExactSizeIterator` implementations for accessor iterators.
+
+### Fixed
+
+- Some lifetimes for accessing fields (e.g. `Node::children`) have been relaxed.
+- `Accessor::buffer_view` is now optional for the benefit of sparse accessors.
+
+### Removed
+
+- `animation::Interpolation::CatmullRomSpline`
+
 ## [0.14.0] - 2019-10-06
 
 ### Added

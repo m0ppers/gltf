@@ -49,9 +49,9 @@ impl<'a> Material<'a> {
         self.index
     }
 
-    ///  The alpha cutoff value of the material.
-    pub fn alpha_cutoff(&self) -> f32 {
-        self.json.alpha_cutoff.0
+    ///  The optional alpha cutoff value of the material.
+    pub fn alpha_cutoff(&self) -> Option<f32> {
+        self.json.alpha_cutoff.map(|value| value.0)
     }
 
     /// The alpha rendering mode of the material.  The material's alpha rendering
@@ -83,6 +83,7 @@ impl<'a> Material<'a> {
 
     /// Optional user-defined name for this object.
     #[cfg(feature = "names")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "names")))]
     pub fn name(&self) -> Option<&'a str> {
         self.json.name.as_ref().map(String::as_str)
     }
@@ -96,6 +97,7 @@ impl<'a> Material<'a> {
     /// Parameter values that define the specular-glossiness material model from
     /// Physically-Based Rendering (PBR) methodology.
     #[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "KHR_materials_pbrSpecularGlossiness")))]
     pub fn pbr_specular_glossiness(&self) -> Option<PbrSpecularGlossiness<'a>> {
         self.json
             .extensions
@@ -103,6 +105,26 @@ impl<'a> Material<'a> {
             .pbr_specular_glossiness
             .as_ref()
             .map(|x| PbrSpecularGlossiness::new(self.document, x))
+    }
+
+    /// Parameter values that define the transmission of light through the material
+    #[cfg(feature = "KHR_materials_transmission")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "KHR_materials_transmission")))]
+    pub fn transmission(&self) -> Option<Transmission<'a>> {
+        self.json.extensions
+            .as_ref()?
+            .transmission.as_ref()
+            .map(|x| Transmission::new(self.document, x))
+    }
+
+    /// Parameter values that define the index of refraction of the material
+    #[cfg(feature = "KHR_materials_ior")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "KHR_materials_ior")))]
+    pub fn ior(&self) -> Option<f32> {
+        self.json.extensions
+            .as_ref()?
+            .ior.as_ref()
+            .map(|x| x.ior.0)
     }
 
     /// A tangent space normal map.
@@ -178,6 +200,7 @@ impl<'a> Material<'a> {
     ///
     /// [`KHR_materials_unlit`](https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_materials_unlit#overview)
     #[cfg(feature = "KHR_materials_unlit")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "KHR_materials_unlit")))]
     pub fn unlit(&self) -> bool {
         self.json
             .extensions
@@ -265,9 +288,57 @@ impl<'a> PbrMetallicRoughness<'a> {
     }
 }
 
+/// A set of parameter values that are used to define the transmissions
+/// factor of the material
+#[cfg(feature = "KHR_materials_transmission")]
+#[cfg_attr(docsrs, doc(cfg(feature = "KHR_materials_transmission")))]
+pub struct Transmission<'a> {
+    /// The parent `Document` struct.
+    document: &'a Document,
+
+    /// The corresponding JSON struct.
+    json: &'a json::extensions::material::Transmission,
+}
+
+#[cfg(feature = "KHR_materials_transmission")]
+#[cfg_attr(docsrs, doc(cfg(feature = "KHR_materials_transmission")))]
+impl<'a> Transmission<'a> {
+    /// Constructs `Ior`.
+    pub(crate) fn new(
+        document: &'a Document,
+        json: &'a json::extensions::material::Transmission,
+    ) -> Self {
+        Self {
+            document: document,
+            json: json,
+        }
+    }
+
+    /// Returns the material's transmission factor.
+    ///
+    /// The default value is `0.0`.
+    pub fn transmission_factor(&self) -> f32 {
+        self.json.transmission_factor.0
+    }
+
+    /// Returns the transmission texture.
+    pub fn transmission_texture(&self) -> Option<texture::Info<'a>> {
+        self.json.transmission_texture.as_ref().map(|json| {
+            let texture = self.document.textures().nth(json.index.value()).unwrap();
+            texture::Info::new(texture, json)
+        })
+    }
+
+    /// Optional application specific data.
+    pub fn extras(&self) -> &'a json::Extras {
+        &self.json.extras
+    }
+}
+
 /// A set of parameter values that are used to define the specular-glossiness
 /// material model from Physically-Based Rendering (PBR) methodology.
 #[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
+#[cfg_attr(docsrs, doc(cfg(feature = "KHR_materials_pbrSpecularGlossiness")))]
 pub struct PbrSpecularGlossiness<'a> {
     /// The parent `Document` struct.
     document: &'a Document,
@@ -277,6 +348,7 @@ pub struct PbrSpecularGlossiness<'a> {
 }
 
 #[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
+#[cfg_attr(docsrs, doc(cfg(feature = "KHR_materials_pbrSpecularGlossiness")))]
 impl<'a> PbrSpecularGlossiness<'a> {
     /// Constructs `PbrSpecularGlossiness`.
     pub(crate) fn new(

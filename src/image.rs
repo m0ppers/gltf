@@ -1,10 +1,12 @@
 use crate::{buffer, Document};
 
 #[cfg(feature = "import")]
+#[cfg_attr(docsrs, doc(cfg(feature = "import")))]
 use image_crate::DynamicImage;
 
 /// Format of image pixel data.
 #[cfg(feature = "import")]
+#[cfg_attr(docsrs, doc(cfg(feature = "import")))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Format {
     /// Red only.
@@ -24,6 +26,18 @@ pub enum Format {
 
     /// Blue, green, red, alpha.
     B8G8R8A8,
+
+    /// Red only (16 bits).
+    R16,
+
+    /// Red, green (16 bits).
+    R16G16,
+
+    /// Red, green, blue (16 bits).
+    R16G16B16,
+
+    /// Red, green, blue, alpha (16 bits).
+    R16G16B16A16,
 }
 
 /// Describes an image data source.
@@ -63,6 +77,7 @@ pub struct Image<'a> {
 
 /// Image data belonging to an imported glTF asset.
 #[cfg(feature = "import")]
+#[cfg_attr(docsrs, doc(cfg(feature = "import")))]
 #[derive(Clone, Debug)]
 pub struct Data {
     /// The image pixel data (8 bits per channel).
@@ -91,7 +106,7 @@ impl<'a> Image<'a> {
             json: json,
         }
     }
-    
+
     /// Returns the internal JSON index.
     pub fn index(&self) -> usize {
         self.index
@@ -99,6 +114,7 @@ impl<'a> Image<'a> {
 
     /// Optional user-defined name for this object.
     #[cfg(feature = "names")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "names")))]
     pub fn name(&self) -> Option<&'a str> {
         self.json.name.as_ref().map(String::as_str)
     }
@@ -141,9 +157,13 @@ impl Data {
             DynamicImage::ImageRgba8(_) => Format::R8G8B8A8,
             DynamicImage::ImageBgr8(_) => Format::B8G8R8,
             DynamicImage::ImageBgra8(_) => Format::B8G8R8A8,
+            DynamicImage::ImageLuma16(_) => Format::R16,
+            DynamicImage::ImageLumaA16(_) => Format::R16G16,
+            DynamicImage::ImageRgb16(_) => Format::R16G16B16,
+            DynamicImage::ImageRgba16(_) => Format::R16G16B16A16,
         };
         let (width, height) = image.dimensions();
-        let pixels = image.raw_pixels();
+        let pixels = image.to_bytes();
         Data { format, width, height, pixels }
     }
 }
