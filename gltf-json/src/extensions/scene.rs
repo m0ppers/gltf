@@ -24,13 +24,13 @@ pub struct Node {
 }
 
 pub mod msft_lod {
-    use crate::{Index, Mesh};
+    use crate::{Index, Node};
     use gltf_derive::Validate;
     use serde_derive::{Deserialize, Serialize};
 
     #[derive(Clone, Debug, Deserialize, Serialize, Validate)]
     pub struct MsftLod {
-        pub ids: Index<Mesh>,
+        pub ids: Index<Node>,
     }
 }
 
