@@ -30,7 +30,7 @@ pub mod msft_lod {
 
     #[derive(Clone, Debug, Deserialize, Serialize, Validate)]
     pub struct MsftLod {
-        pub ids: Index<Node>,
+        pub ids: Vec<Index<Node>>,
     }
 }
 
