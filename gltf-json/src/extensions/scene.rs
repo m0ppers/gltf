@@ -20,6 +20,7 @@ pub struct Node {
         skip_serializing_if = "Option::is_none"
     )]
     pub khr_lights_punctual: Option<khr_lights_punctual::KhrLightsPunctual>,
+    #[serde(default, rename = "MSFT_lod", skip_serializing_if = "Option::is_none")]
     pub msft_lod: Option<msft_lod::MsftLod>,
 }
 
